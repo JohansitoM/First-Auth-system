@@ -62,9 +62,10 @@ exports.verifyEmail = async (req, res) => {
     const { token } = req.params
     try {
         const decode = jwt.verify(token, process.env.JWT_SECRET)
-        await user.update({ isVerified: true }, { where: { id: decode.id } })
+        await User.update({ isVerified: true }, { where: { id: decode.id } })
         res.status(200).json({ message: 'Correo verificado exitosamente' })
     } catch (error) {
+        console.log(error)
         res.status(400).json({ error: 'Token inválido o expirado' })
     }
 }
