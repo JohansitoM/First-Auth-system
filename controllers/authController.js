@@ -1,10 +1,44 @@
+const passport = require('passport')
+const GoogleStrategy = require('passport-google-oauth20').Strategy
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
 const User = require('../models/User')
 
+passport.use(
+    new GoogleStrategy(
+        {
+            clientID: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackURL: 'http://localhost:5000/api/auth/google/callback',
+        },
+        async (accessToken, refreshToken, profile, done) => {
+            try {
+                // Buscar o crear usuario en la base de datos
+                let user = await User.findOne({ where: { googleId: profile.id } })
+
+                if (!user) {
+                    user = await User.create({
+                        googleId: profile.id,
+                        email: profile.emails[0].value,
+                        name: profile.displayName,
+                        isVerified: true,
+                    })
+                }
+
+                // Generar token JWT 
+                const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' })
+
+                done(null, { user, token }) // Pasr el usuario y el token al siguiente paso
+            } catch (error) {
+                done(error, null)
+            }
+        }
+    )
+)
+
 // Registro de Usuario 
-exports.register = async (req, res) => {
+const register = async (req, res) => {
     const { name, email, password } = req.body
 
     try {
@@ -39,8 +73,9 @@ exports.register = async (req, res) => {
 }
 
 // Login de Usuario
-exports.login = async (req, res) => {
+const login = async (req, res) => {
     const { email, password } = req.body
+
     try {
         const user = await User.findOne({ where: { email } })
         if(!user) return res.status(404).json({ error: 'Usuario no encontrado' })
@@ -51,14 +86,15 @@ exports.login = async (req, res) => {
         if(!user.isVerified) return res.status(401).json({ error: 'Verifica tu correo antes de iniciar sesión'})
 
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn:'1d' })
-        res.status(200).json({ token })
+        res.status(200).json({ token, user: { id: user.id, email: user.email, name: user.name } })
     } catch (error) {
+        console.log(error)
         res.status(500).json({ error: 'Error al iniciar sesión' })
     }
 }
 
 // Verificar email 
-exports.verifyEmail = async (req, res) => {
+const verifyEmail = async (req, res) => {
     const { token } = req.params
     try {
         const decode = jwt.verify(token, process.env.JWT_SECRET)
@@ -71,7 +107,7 @@ exports.verifyEmail = async (req, res) => {
 }
 
 // Recuperar contraseña
-exports.forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res) => {
     const { email } = req.body
     try {
         const user = await User.findOne({ where: { email }})
@@ -102,7 +138,7 @@ exports.forgotPassword = async (req, res) => {
 }
 
 // Resetear Contraseña 
-exports.resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
     const { token, newPassword } = req.body
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
@@ -112,4 +148,13 @@ exports.resetPassword = async (req, res) => {
     } catch (error) {
         res.status(400).json({ error: 'Token inválido o expirado'})
     }
+}
+
+module.exports = {
+    passport,
+    register,
+    login,
+    verifyEmail,
+    forgotPassword,
+    resetPassword
 }

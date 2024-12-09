@@ -2,6 +2,11 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 const User = sequelize.define('User', {
+    googleId: {
+        type: DataTypes.STRING,
+        unique: true,
+        allowNull: true,
+    },
     name: {
         type: DataTypes.STRING,
         allowNull: false,
