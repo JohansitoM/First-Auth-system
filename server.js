@@ -9,9 +9,9 @@ const app = express();
 
 // Middleware
 app.use(cors());
+
 app.use(bodyParser.json())
 app.use('/api/auth', authRoutes)
-
 
 // Inicia el server
 const PORT = process.env.PORT || 5000;

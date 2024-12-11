@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
 const User = require('../models/User')
+passport.initialize()
 
 passport.use(
     new GoogleStrategy(
@@ -29,7 +30,7 @@ passport.use(
                 // Generar token JWT 
                 const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' })
 
-                done(null, { user, token }) // Pasr el usuario y el token al siguiente paso
+                done(null, { ...user, token }) // Pasr el usuario y el token al siguiente paso
             } catch (error) {
                 done(error, null)
             }

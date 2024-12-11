@@ -12,8 +12,9 @@ router.get(
     '/google/callback',
     passport.authenticate('google', { session: false }),
     (req, res) => {
+        console.log(req.user.token)
         // Redirigir al frontend con el token jwt
-        res.redirect('http://localhost:5000/users?token=${req.user.token}')
+        res.redirect(`http://localhost:5173/users?token=${req.user.token}`)
     }
 )
 
@@ -21,7 +22,6 @@ router.get(
 router.get('/users', authenticate, async (req, res) => {
     try {
         const users = await User.findAll( { attributes: ['id', 'name', 'email'] })
-        console.log(users)
         res.status(200).json(users)
     } catch (error) {
         console.log(error)
@@ -38,6 +38,7 @@ router.post('/reset-password/:token', resetPassword)
 router.put('/users/:id', authenticate, async (req, res) => {
     const { id } = req.params; // ID del usuario que se va a editar
     const { email, name } = req.body;
+    console.log(email, name)
 
     try {
         const user = await User.findByPk(id); // Buscar usuario por ID
@@ -49,10 +50,12 @@ router.put('/users/:id', authenticate, async (req, res) => {
         // Actualizar datos del usuario
         user.email = email || user.email;
         user.name = name || user.name;
+
         await user.save();
 
         res.status(200).json({ message: 'Usuario actualizado correctamente', user });
     } catch (error) {
+        console.log(error)
         res.status(500).json({ error: 'Error al actualizar usuario' });
     }
 });
@@ -70,6 +73,7 @@ router.delete('/users/:id', authenticate, async (req, res) => {
         await user.destroy(); // Eliminar el usuario
         res.status(200).json({ message: 'Usuario eliminado correctamente' });
     } catch (error) {
+        console.log(error)
         res.status(500).json({ error: 'Error al eliminar usuario' });
     }
 });

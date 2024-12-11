@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken')
 
-const authenticate = (req, res, next) => {
+const authenticate = (req, res, next) => { 
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+
     const token = req.headers.authorization?.split(' ')[1]
 
     if (!token) {
